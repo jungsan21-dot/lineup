@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>도담마루 출석 체크</title>
+    <title>도서관 출석 체크</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -17,7 +17,6 @@
             }
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -40,14 +39,14 @@
         }
         /* Custom styles for circular button */
         .circular-btn {
-            width: 48px; /* w-12, Adjusted for smaller grid */
-            height: 48px; /* h-12, Adjusted for smaller grid */
+            width: 64px; /* w-16 */
+            height: 64px; /* h-16 */
             border-radius: 9999px; /* rounded-full */
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600; /* font-semibold */
-            font-size: 0.75rem; /* text-xs, Adjusted for smaller grid */
+            font-size: 1.125rem; /* text-lg */
             transition: transform 0.2s ease-in-out;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
             color: white; /* Text color for the button */
@@ -60,21 +59,30 @@
             cursor: not-allowed;
             box-shadow: none;
         }
+        /* Style for attendance history modal */
+        .history-list-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .history-list-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body class="bg-stone-100 flex items-center justify-center min-h-screen p-4">
 
-    <main class="w-full max-w-full bg-white rounded-2xl shadow-lg p-6 md:p-8 space-y-4">
+    <!-- FHD 해상도에 맞게 최대 너비 제한 해제 -->
+    <main class="w-full bg-white rounded-2xl shadow-lg p-6 md:p-8 space-y-4">
         
         <!-- Date Display Section -->
         <div class="flex flex-col sm:flex-row justify-between items-center mb-4 text-stone-600">
             <div class="text-center sm:text-left mb-2 sm:mb-0">
                 <p class="font-bold text-green-500 text-[70px]">도서 대출일</p>
-                <div id="current-date" class="font-medium text-green-500 text-3xl sm:text-4xl lg:text-[75px] leading-none"></div>
+                <div id="current-date" class="font-medium text-green-500 text-4xl sm:text-5xl lg:text-[70px] leading-none"></div>
             </div>
             <div class="text-center sm:text-right">
                 <p class="font-bold text-orange-500 text-[70px]">도서 반납일</p>
-                <div id="two-weeks-later-date" class="font-medium text-orange-500 text-3xl sm:text-4xl lg:text-[75px] leading-none"></div>
+                <div id="two-weeks-later-date" class="font-medium text-orange-500 text-4xl sm:text-5xl lg:text-[70px] leading-none"></div>
             </div>
         </div>
 
@@ -82,40 +90,51 @@
         <div class="h-px bg-stone-300 my-4"></div>
 
         <header class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-stone-800">도담마루 출석 체크 🧑‍🎓</h1>
+            <h1 class="text-3xl font-bold text-stone-800">도서관 출석 체크 🧑‍🎓</h1>
             <p class="text-stone-500 mt-2">자기 이름을 찾아 클릭 해 주세요!</p>
         </header>
 
         <!-- Student List -->
+        <!-- FHD 해상도에서 3줄로 표시되도록 xl:grid-cols-11로 수정 -->
         <section class="space-y-4">
             <h2 class="text-lg font-semibold text-stone-700 mb-2">학생 목록 (총 <span id="student-count">0</span>명)</h2>
-            <div id="student-list-container" class="bg-white border border-stone-200 rounded-lg p-3 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-9 3xl:grid-cols-11 gap-x-2 gap-y-1">
-                <p id="no-students-message" class="col-span-full text-center text-stone-400 mt-4 hidden">아직 등록된 학생이 없어요.</p>
+            <div id="student-list-container" class="bg-white border border-stone-200 rounded-lg p-3 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-11 gap-x-3 gap-y-1">
+                <p id="no-students-message" class="col-span-full text-center text-stone-400 mt-4 hidden">아직 등록된 학생이 없어요. ⬆️ 위에서 학생을 추가해보세요!</p>
                 <!-- 학생 카드가 여기에 동적으로 추가됩니다 -->
             </div>
         </section>
 
-        <footer class="text-center pt-2 flex flex-row justify-center items-center gap-4">
+        <footer class="text-center pt-2">
+            <!-- 불필요한 버튼과 flex 컨테이너 제거 -->
             <button id="reset-all-button" class="text-sm btn-text-delete hover:underline">
                 모든 학생 기록 초기화
-            </button>
-            <button id="view-all-history-button" class="px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700">
-                전체 학생 기록 보기
             </button>
         </footer>
 
     </main>
 
-    <!-- 모든 학생 기록 초기화 코드 입력 모달 (최종 확인 기능 통합) -->
+    <!-- 모든 학생 기록 초기화 코드 입력 모달 -->
     <div id="code-reset-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
-            <h3 class="text-xl font-bold text-stone-800">정말 모든 학생을 초기화하시겠어요?</h3>
-            <p class="text-stone-500 mt-2 mb-4">초기화하려면 4자리 코드를 입력하세요. <br>이 작업은 되돌릴 수 없습니다.</p>
+            <h3 class="text-xl font-bold text-stone-800">초기화 코드 입력</h3>
+            <p class="text-stone-500 mt-2 mb-4">모든 학생 기록을 초기화하려면 4자리 코드를 입력하세요.</p>
             <input type="password" id="reset-code-input" class="w-full p-2 border-2 border-stone-300 rounded-md text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500" maxlength="4">
             <p id="code-error-message" class="text-red-500 text-sm mt-2 hidden">올바른 코드를 입력해주세요.</p>
             <div class="flex justify-center gap-4 mt-6">
                 <button id="confirm-code-button" class="px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700">확인</button>
-                <button id="cancel-code-button" class="px-6 py-2 rounded-lg font-semibold bg-stone-200 text-stone-700 hover:bg-stone-300">취소</button>
+                <button id="cancel-code-button" class="px-6 py-2 rounded-lg font-semibold bg-stone-200 text-stone-700 hover:bg-stone-300">아니요</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모든 학생 기록 초기화 최종 확인 모달 -->
+    <div id="reset-all-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold text-stone-800">정말 모든 학생을 초기화하시겠어요?</h3>
+            <p class="text-stone-500 mt-2 mb-6">모든 학생의 출석 기록이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-reset-all-button" class="px-6 py-2 rounded-lg font-semibold btn-secondary">네, 전부 초기화합니다</button>
+                <button id="cancel-reset-all-button" class="px-6 py-2 rounded-lg font-semibold bg-stone-200 text-stone-700 hover:bg-stone-300">아니요</button>
             </div>
         </div>
     </div>
@@ -129,14 +148,17 @@
         </div>
     </div>
 
-    <!-- 학생 전체 출석 기록 막대 그래프 모달 -->
-    <div id="all-history-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
-        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl text-center">
-            <h3 id="all-history-modal-title" class="text-xl font-bold text-stone-800 mb-4">전체 학생 이번 달 출석 기록</h3>
-            <div class="w-full h-[50vh] bg-stone-50 border border-stone-200 rounded-lg p-3">
-                <canvas id="attendance-chart"></canvas>
+    <!-- 학생 출석 기록 모달 (삭제하지 않음) -->
+    <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center">
+            <h3 id="history-modal-title" class="text-xl font-bold text-stone-800 mb-4">[학생 이름] 출석 기록</h3>
+            <div id="history-list-container" class="h-64 bg-stone-50 border border-stone-200 rounded-lg p-3 overflow-y-auto text-left">
+                <ul id="history-list" class="space-y-1 text-stone-600">
+                    <!-- 출석 기록이 여기에 동적으로 추가됩니다. -->
+                </ul>
+                <p id="no-history-message" class="text-center text-stone-400 mt-4 hidden">아직 출석 기록이 없어요.</p>
             </div>
-            <button id="close-all-history-modal-button" class="mt-6 px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700">닫기</button>
+            <button id="close-history-modal-button" class="mt-6 px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700">닫기</button>
         </div>
     </div>
 
@@ -146,7 +168,6 @@
             const studentCountSpan = document.getElementById('student-count');
             const noStudentsMessage = document.getElementById('no-students-message');
             const resetAllButton = document.getElementById('reset-all-button');
-            const viewAllHistoryButton = document.getElementById('view-all-history-button');
 
             const codeResetModal = document.getElementById('code-reset-modal');
             const resetCodeInput = document.getElementById('reset-code-input');
@@ -154,23 +175,31 @@
             const cancelCodeButton = document.getElementById('cancel-code-button');
             const codeErrorMessage = document.getElementById('code-error-message');
 
+            const resetAllModal = document.getElementById('reset-all-modal');
+            const confirmResetAllButton = document.getElementById('confirm-reset-all-button');
+            const cancelResetAllButton = document.getElementById('cancel-reset-all-button');
+
             const infoModal = document.getElementById('info-modal');
             const infoModalTitle = document.getElementById('info-modal-title');
             const infoModalText = document.getElementById('info-modal-text');
             const closeInfoModalButton = document.getElementById('close-info-modal-button');
-            
-            const allHistoryModal = document.getElementById('all-history-modal');
-            const closeAllHistoryModalButton = document.getElementById('close-all-history-modal-button');
-            const attendanceChartCanvas = document.getElementById('attendance-chart');
 
+            const historyModal = document.getElementById('history-modal');
+            const historyModalTitle = document.getElementById('history-modal-title');
+            const historyList = document.getElementById('history-list');
+            const noHistoryMessage = document.getElementById('no-history-message');
+            const closeHistoryModalButton = document.getElementById('close-history-modal-button');
+            
             const currentDateEl = document.getElementById('current-date');
             const twoWeeksLaterDateEl = document.getElementById('two-weeks-later-date');
 
-            let students = {};
-            let studentOrder = [];
-            let draggedStudentName = null;
-            let myChart = null; // Chart.js 인스턴스를 저장할 변수
+            let students = {}; // 학생 데이터를 저장할 객체. 예: { '학생이름': { attendanceDates: ['YYYY년 MM월 DD일 (요일) HH시 MM분 SS초'] } }
+            let studentOrder = []; // 학생 이름을 입력한 순서대로 저장할 배열
 
+            let currentStudentNameToOperate = null;
+            let draggedStudentName = null;
+            
+            // 고정된 학생 목록
             const fixedStudentNames = [
                 '정해나', '원소정', '우찬영', '전제준', '강한봄', '이기웅', '용해인', '이효율',
                 '장설', '이하윤', '곽재은', '김태이', '강시호', '정모세', '김도희', '김라엘',
@@ -178,30 +207,30 @@
                 '권도연', '우예빈', '김도훈', '차태호', '박경민', '권나윤', '강한아'
             ];
 
+            // 학생 카드 배경색 팔레트 (Tailwind CSS 클래스)
             const studentCardColors = [
                 'bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-red-50',
                 'bg-purple-50', 'bg-pink-50', 'bg-indigo-50', 'bg-teal-50',
             ];
 
+            // 출석 버튼 색상 팔레트 (Tailwind CSS 클래스), 위의 카드 색상에 대응
             const circularButtonColors = [
                 'bg-blue-600', 'bg-green-600', 'bg-yellow-600', 'bg-red-600',
                 'bg-purple-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600',
             ];
-
-            const getFormattedDateString = (date, includeYear = true, includeTime = false, isGreen = true) => {
+            
+            const getFormattedDateString = (date, includeYear = true, includeTime = false) => {
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
                 const dayOfWeek = daysOfWeek[date.getDay()];
                 
-                const textColorClass = isGreen ? 'text-green-700' : 'text-orange-700';
-                
                 let dateString = '';
                 if (includeYear) {
                     dateString += `${year}년 `;
                 }
-                dateString += `<span class="font-black ${textColorClass} text-5xl sm:text-6xl lg:text-[75px] leading-none">${month}</span><span class="text-2xl sm:text-3xl lg:text-4xl">월</span> <span class="font-black ${textColorClass} text-5xl sm:text-6xl lg:text-[75px] leading-none">${day}</span><span class="text-2xl sm:text-3xl lg:text-4xl">일</span> (${dayOfWeek})`;
+                dateString += `${month}월 ${day}일 (${dayOfWeek})`;
 
                 if (includeTime) {
                     const hours = String(date.getHours()).padStart(2, '0');
@@ -214,15 +243,16 @@
 
             const getReturnDate = () => {
                 let date = new Date();
-                date.setDate(date.getDate() + 14);
+                date.setDate(date.getDate() + 14); // 오늘로부터 14일 후
 
-                let dayOfWeek = date.getDay();
-                if (dayOfWeek === 0) {
-                    date.setDate(date.getDate() + 1);
-                } else if (dayOfWeek === 6) {
-                    date.setDate(date.getDate() + 2);
+                let dayOfWeek = date.getDay(); // 0: 일요일, 6: 토요일
+
+                if (dayOfWeek === 0) { // 일요일이면
+                    date.setDate(date.getDate() + 1); // 다음 월요일로
+                } else if (dayOfWeek === 6) { // 토요일이면
+                    date.setDate(date.getDate() + 2); // 다음 월요일로
                 }
-                return getFormattedDateString(date, false, false, false); // isGreen을 false로 설정하여 주황색 적용
+                return getFormattedDateString(date, false); // 반납일은 년도 제외
             };
 
             const loadData = () => {
@@ -268,7 +298,7 @@
                 infoModal.classList.remove('hidden');
             };
 
-            const renderStudents = () => {
+const renderStudents = () => {
                 studentListContainer.innerHTML = '';
                 studentCountSpan.textContent = studentOrder.length;
 
@@ -287,28 +317,21 @@
                     const uniqueMonthlyAttendanceDates = new Set(
                         student.attendanceDates
                             .filter(date => date.startsWith(currentMonthYear))
-                            .map(date => date.split(' (')[0])
+                            .map(date => date.split(' (')[0]) // YYYY년 MM월 DD일 부분만 추출 (시간 제외)
                     );
                     return { name: studentName, count: uniqueMonthlyAttendanceDates.size };
                 });
 
                 monthlyAttendanceCounts.sort((a, b) => b.count - a.count);
 
-                let top3Students = new Set();
+                let topStudents = new Set();
                 if (monthlyAttendanceCounts.length > 0) {
-                    top3Students.add(monthlyAttendanceCounts[0].name);
-                    if (monthlyAttendanceCounts.length > 1 && monthlyAttendanceCounts[1].count === monthlyAttendanceCounts[0].count) {
-                        top3Students.add(monthlyAttendanceCounts[1].name);
-                    } else if (monthlyAttendanceCounts.length > 1) {
-                        top3Students.add(monthlyAttendanceCounts[1].name);
-                    }
-                    if (monthlyAttendanceCounts.length > 2 && monthlyAttendanceCounts[2].count === monthlyAttendanceCounts[1].count) {
-                        top3Students.add(monthlyAttendanceCounts[2].name);
-                    } else if (monthlyAttendanceCounts.length > 2 && monthlyAttendanceCounts[2].count === monthlyAttendanceCounts[0].count) {
-                         top3Students.add(monthlyAttendanceCounts[2].name);
-                    } else if (monthlyAttendanceCounts.length > 2 && monthlyAttendanceCounts[2].count < monthlyAttendanceCounts[1].count) {
-                        top3Students.add(monthlyAttendanceCounts[2].name);
-                    }
+                    const topCount = monthlyAttendanceCounts[0].count;
+                    monthlyAttendanceCounts.forEach(student => {
+                        if (student.count === topCount && topCount > 0) {
+                            topStudents.add(student.name);
+                        }
+                    });
                 }
                 
                 studentOrder.forEach((studentName, index) => {
@@ -317,31 +340,33 @@
                         students[studentName] = { attendanceDates: [] };
                     }
 
+                    // 출석 여부 확인 로직 수정: YYYY년 MM월 DD일 부분만 비교
+                    const todayDateOnly = getFormattedDateString(new Date(), true, false).split(' (')[0]; 
+                    const hasAttendedToday = students[studentName].attendanceDates.some(date => date.startsWith(todayDateOnly));
+
+                    // 출석 횟수 집계 로직 수정: YYYY년 MM월 DD일 부분만 추출하여 유일한 날짜 수를 계산
                     const uniqueMonthlyAttendanceDates = new Set(
-                        student.attendanceDates
+                        students[studentName].attendanceDates
                             .filter(date => date.startsWith(currentMonthYear))
                             .map(date => date.split(' (')[0])
                     );
-                    const attendedCount = uniqueMonthlyAttendanceDates.size; 
-
-                    const todayDateOnly = getFormattedDateString(new Date(), true, false, true).split(' (')[0];
-                    const hasAttendedToday = student.attendanceDates.some(date => date.startsWith(todayDateOnly));
+                    const attendedCount = uniqueMonthlyAttendanceDates.size;
 
                     const cardColorClass = studentCardColors[index % studentCardColors.length];
                     const buttonColorClass = circularButtonColors[index % circularButtonColors.length];
 
-                    const isTopStudent = top3Students.has(studentName);
+                    const isTopStudent = topStudents.has(studentName);
                     const crownIcon = isTopStudent ? ' 👑' : '';
 
                     const studentCard = document.createElement('div');
-                    studentCard.className = `${cardColorClass} p-2 rounded-lg border border-stone-200 shadow-sm flex flex-col items-center justify-between cursor-grab`;
+                    studentCard.className = `${cardColorClass} p-4 rounded-lg border border-stone-200 shadow-sm flex flex-col items-center justify-between cursor-grab`;
                     studentCard.setAttribute('data-student-name', studentName);
                     studentCard.setAttribute('draggable', 'true');
 
                     studentCard.innerHTML = `
                         <div class="flex items-center justify-between w-full mb-3">
-                            <h3 class="text-2xl font-semibold text-stone-800 truncate pr-2">${studentName}${crownIcon}</h3>
-                        </div>
+                            <h3 class="text-xl font-semibold text-stone-800 truncate pr-4">${studentName}${crownIcon}</h3>
+                            </div>
                         <div class="flex flex-col items-center space-y-2">
                             <button class="circular-btn attend-btn ${hasAttendedToday ? 'bg-gray-400 cursor-not-allowed' : buttonColorClass}" ${hasAttendedToday ? 'disabled' : ''} data-student-name="${studentName}">
                                 ${hasAttendedToday ? '완료! 🎉' : '출석'}
@@ -364,8 +389,8 @@
                 document.querySelectorAll('.attend-btn').forEach(button => {
                     button.onclick = (event) => {
                         const studentName = event.target.dataset.studentName;
-                        const fullTodayStrWithTime = getFormattedDateString(new Date(), true, true);
-                        const todayDateOnly = getFormattedDateString(new Date(), true, false, true).split(' (')[0];
+                        const fullTodayStrWithTime = getFormattedDateString(new Date(), true, true); // YYYY년 MM월 DD일 (요일) HH시 MM분 SS초
+                        const todayDateOnly = getFormattedDateString(new Date(), true, false).split(' (')[0]; // YYYY년 MM월 DD일 부분
                         
                         if (students[studentName]) {
                             const hasAttendedToday = students[studentName].attendanceDates.some(date => date.startsWith(todayDateOnly));
@@ -385,7 +410,7 @@
                 document.querySelectorAll('.undo-attend-btn').forEach(button => {
                     button.onclick = (event) => {
                         const studentName = event.target.dataset.studentName;
-                        const todayDateOnly = getFormattedDateString(new Date(), true, false, true).split(' (')[0];
+                        const todayDateOnly = getFormattedDateString(new Date(), true, false).split(' (')[0]; // YYYY년 MM월 DD일 부분
 
                         if (students[studentName]) {
                             let lastIndex = -1;
@@ -455,75 +480,7 @@
                     });
                 });
             };
-            
-            const renderChart = () => {
-                const currentMonthYear = new Date().getFullYear() + '년 ' + String(new Date().getMonth() + 1).padStart(2, '0') + '월';
-                const chartData = studentOrder.map(name => {
-                    const student = students[name];
-                    const uniqueMonthlyAttendanceDates = new Set(
-                        student.attendanceDates
-                            .filter(date => date.startsWith(currentMonthYear))
-                            .map(date => date.split(' (')[0])
-                    );
-                    return {
-                        name: name,
-                        count: uniqueMonthlyAttendanceDates.size
-                    };
-                }).sort((a, b) => b.count - a.count);
 
-                const labels = chartData.map(d => d.name);
-                const data = chartData.map(d => d.count);
-                const backgroundColors = data.map((count, index) => {
-                    const studentIndex = studentOrder.indexOf(chartData[index].name);
-                    const colorClass = circularButtonColors[studentIndex % circularButtonColors.length];
-                    return colorClass.replace('bg-', '#').replace('600', '700'); // Use a slightly darker color for the bar
-                });
-                
-                if (myChart) {
-                    myChart.destroy();
-                }
-
-                myChart = new Chart(attendanceChartCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '이번 달 출석 횟수',
-                            data: data,
-                            backgroundColor: backgroundColors,
-                            borderColor: backgroundColors.map(color => color.replace('700', '800')),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            title: {
-                                display: true,
-                                text: '이번 달 학생 출석 기록',
-                                font: {
-                                    size: 16
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: '출석 횟수'
-                                }
-                            }
-                        }
-                    }
-                });
-            };
-
-            // Event Listeners
             resetAllButton.addEventListener('click', () => {
                 codeResetModal.classList.remove('hidden');
                 resetCodeInput.value = '';
@@ -533,14 +490,8 @@
             confirmCodeButton.addEventListener('click', () => {
                 const enteredCode = resetCodeInput.value;
                 if (enteredCode === '6408') {
-                    students = {};
-                    studentOrder = [...fixedStudentNames];
-                    fixedStudentNames.forEach(name => {
-                        students[name] = { attendanceDates: [] };
-                    });
-                    saveData();
-                    renderStudents();
                     codeResetModal.classList.add('hidden');
+                    resetAllModal.classList.remove('hidden');
                 } else {
                     codeErrorMessage.classList.remove('hidden');
                     resetCodeInput.value = '';
@@ -551,21 +502,42 @@
                 codeResetModal.classList.add('hidden');
             });
 
+            confirmResetAllButton.addEventListener('click', () => {
+                students = {};
+                studentOrder = [...fixedStudentNames];
+                fixedStudentNames.forEach(name => {
+                    students[name] = { attendanceDates: [] };
+                });
+                saveData();
+                renderStudents();
+                resetAllModal.classList.add('hidden');
+            });
+
+            cancelResetAllButton.addEventListener('click', () => {
+                resetAllModal.classList.add('hidden');
+            });
+
             closeInfoModalButton.addEventListener('click', () => {
                 infoModal.classList.add('hidden');
             });
+            
+            // 월별 출석 현황 관련 모달과 이벤트 리스너 제거
+            const monthlyStatsModal = document.getElementById('monthly-stats-modal');
+            const monthlyStatsContent = document.getElementById('monthly-stats-content');
+            const closeMonthlyStatsButton = document.getElementById('close-monthly-stats-button');
+            const monthlyStatsButton = document.getElementById('monthly-stats-button');
 
-            viewAllHistoryButton.addEventListener('click', () => {
-                allHistoryModal.classList.remove('hidden');
-                renderChart();
-            });
+            // 월별 통계 관련 코드는 삭제되었으므로 이벤트 리스너도 제거합니다.
+            if(monthlyStatsButton) {
+                monthlyStatsButton.onclick = () => { showInfoModal('기능 제거', '이 기능은 제거되었습니다.'); };
+            }
+            if(closeMonthlyStatsButton) {
+                closeMonthlyStatsButton.onclick = () => { monthlyStatsModal.classList.add('hidden'); };
+            }
 
-            closeAllHistoryModalButton.addEventListener('click', () => {
-                allHistoryModal.classList.add('hidden');
-            });
 
-            currentDateEl.innerHTML = getFormattedDateString(new Date(), false, false, true);
-            twoWeeksLaterDateEl.innerHTML = getReturnDate();
+            currentDateEl.textContent = getFormattedDateString(new Date(), false);
+            twoWeeksLaterDateEl.textContent = getReturnDate();
 
             loadData();
             renderStudents();
@@ -573,5 +545,3 @@
     </script>
 </body>
 </html>
-
-
